@@ -2,7 +2,7 @@ name: CI/CD Tienda Frontend
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "deploy" ]
 
 jobs:
   build-and-push:
@@ -16,7 +16,8 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
@@ -24,10 +25,10 @@ jobs:
 
     - name: Build, Tag, and Push Image to ECR
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: devops/frontdespacho
+        REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        REPOSITORY: ${{ secrets.ECR_REPO_URL_FRONTEND }}
         IMAGE_TAG: v1
       run: |
-        # Como el dockerfile está en la raíz junto a todo el código, usamos "."
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        # Como el dockerfile está suelto en la raíz, usamos "." para el contexto
+        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f dockerfile .
+        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
