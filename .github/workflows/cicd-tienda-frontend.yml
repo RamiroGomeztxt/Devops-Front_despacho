@@ -29,6 +29,22 @@ jobs:
         REPOSITORY: ${{ secrets.ECR_REPO_URL_FRONTEND }}
         IMAGE_TAG: v1
       run: |
-        # Como el dockerfile está suelto en la raíz, usamos "." para el contexto
         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f dockerfile .
         docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+    # ==========================================
+    # DESPLIEGUE EN EL FRONTEND (MAQUINA PUBLICA)
+    # ==========================================
+    - name: Deploy to Front EC2 via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+          mkdir -p ~/app-frontend && cd ~/app-frontend
+          docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPO_URL_FRONTEND }}:v1
+          docker stop tienda-frontend-despacho || true
+          docker rm tienda-frontend-despacho || true
+          docker run -d -p 80:80 --name tienda-frontend-despacho ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPO_URL_FRONTEND }}:v1
