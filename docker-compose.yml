@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  front-despacho:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: tienda-frontend-despacho
+    ports:
+      - "80:80"  # Mapea el puerto de salida web estándar de tu contenedor
+    environment:
+      - NODE_ENV=production
